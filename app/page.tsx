@@ -6,6 +6,10 @@ const options = [
   { value: 'chocolate', label: 'Chocolate' },
   { value: 'strawberry', label: 'Strawberry' },
   { value: 'vanilla', label: 'Vanilla' },
+  {value : 'kekw',label : 'KEKW'},
+  {value : 'troll',label : 'Troll'},
+  {value : 'ezglap', label : 'EzGlap'}
+
 ];
 export default function Home() {
   const [selectedOption, setSelectedOption] = useState<Options | string>("");

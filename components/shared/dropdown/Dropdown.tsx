@@ -61,11 +61,13 @@ const Dropdown = ({
 }: DropDownProps) => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [filter,setFilter] = useState<boolean>(false);
 
   const containerheight = typeof height === "number" ? height + "px" : height;
   const containerwidth = typeof width === "number" ? width + "px" : width;
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if(!isTypeSearch) return;
+    setFilter(true)
     const { value } = e.target;
     onChange(value);
   };
@@ -84,8 +86,20 @@ const Dropdown = ({
   useEffect(() => {
     if (isActive) {
       inputRef.current?.focus();
+    }else{
+     setFilter(false)
+     typeof defaultOption !== "object" && onChange("")
     }
-  }, [isActive, inputRef]);
+  }, [isActive, inputRef,defaultOption,onChange]);
+ 
+  const valueChange = ()=>{
+    let optionsFiltered : Options[] = [...options];
+   if(isTypeSearch && filter && typeof defaultOption !== "object" ){
+    optionsFiltered =optionsFiltered.filter(option=>option.label.toLowerCase().includes(defaultOption))
+   }
+
+   return optionsFiltered;
+  }
   useEffect(()=>{
    window.addEventListener("click",()=>setIsActive(false));
 
@@ -107,10 +121,10 @@ const Dropdown = ({
             <IoIosArrowDown onClick={() => setIsActive(true)} />
           )}
         </ArrowContainer>
-       {  isActive && <OptionsContainer>
+       {  (isActive && valueChange().length) ? <OptionsContainer>
           {
             
-              options.map((option) => (
+              valueChange().map((option) => (
                 <li
                   key={option.value}
                   customvalue={option.value}
@@ -121,7 +135,7 @@ const Dropdown = ({
                 </li>
               ))
           }
-        </OptionsContainer>}
+        </OptionsContainer> : null}
       </DropDownWrapper>
     </DropDownContainer>
   );
