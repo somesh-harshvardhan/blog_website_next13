@@ -33,6 +33,8 @@ const ArrowContainer = styled.div`
 `;
 const OptionsContainer = styled.ul`
   list-style: none;
+  max-height: 300px;
+  overflow: auto;
   position: absolute;
   width: 100%;
   left: 0;
@@ -57,7 +59,8 @@ const Dropdown = ({
   onChange,
   options,
   isMultipleSelect=false,
-  isTypeSearch =false
+  isTypeSearch =false,
+  ...rest
 }: DropDownProps) => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -95,7 +98,7 @@ const Dropdown = ({
   const valueChange = ()=>{
     let optionsFiltered : Options[] = [...options];
    if(isTypeSearch && filter && typeof defaultOption !== "object" ){
-    optionsFiltered =optionsFiltered.filter(option=>option.label.toLowerCase().includes(defaultOption))
+    optionsFiltered =optionsFiltered.filter(option=>option.label.toLowerCase().includes(defaultOption.toLowerCase()))
    }
 
    return optionsFiltered;
