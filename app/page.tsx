@@ -16,7 +16,7 @@ export default function Home() {
   
   return (
 <main>
- <Dropdown width={300} defaultOption={selectedOption} onChange={setSelectedOption} options={options} isTypeSearch/>
+ <Dropdown width={300} defaultOption={selectedOption} onChange={setSelectedOption} options={options} isTypeSearch isMultipleSelect/>
 </main>
   )
 }

@@ -2,6 +2,7 @@
 import React, { LiHTMLAttributes, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import Pills from "../pills/Pills";
 
 const DropDownContainer = styled.div<DropDownStyledProps>`
   width: ${(props) => (props.width ? props.width : "100%")};
@@ -65,6 +66,7 @@ const Dropdown = ({
   const [isActive, setIsActive] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [filter,setFilter] = useState<boolean>(false);
+  const [selectedTags,setSelectedTags] =useState<string[]>([]);
 
   const containerheight = typeof height === "number" ? height + "px" : height;
   const containerwidth = typeof width === "number" ? width + "px" : width;
@@ -104,12 +106,14 @@ const Dropdown = ({
    return optionsFiltered;
   }
   useEffect(()=>{
-   window.addEventListener("click",()=>setIsActive(false));
-
+   const handleClick = ()=>setIsActive(false)
+   window.addEventListener("click",handleClick);
+   return ()=>window.removeEventListener("click",handleClick)
   },[])
   return (
     <DropDownContainer height={containerheight} width={containerwidth} onClick={e=>e.stopPropagation()}>
       <DropDownWrapper>
+        {isMultipleSelect && <Pills pills={selectedTags}/>}
         <Input
           ref={inputRef}
           value={typeof defaultOption !== "object" ? defaultOption : defaultOption.label}
