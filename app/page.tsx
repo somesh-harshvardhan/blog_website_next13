@@ -12,7 +12,7 @@ const options = [
   
 ];
 export default function Home() {
-  const [selectedOption, setSelectedOption] = useState<Options | string>("");
+  const [selectedOption, setSelectedOption] = useState<Options | string | Options[]>("");
   
   return (
 <main>

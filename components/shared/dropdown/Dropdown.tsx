@@ -2,7 +2,8 @@
 import React, { LiHTMLAttributes, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
-import Pills from "../pills/Pills";
+import Pills, { Pill } from "../pills/Pills";
+import { removeDuplicate } from "@/lib";
 
 const DropDownContainer = styled.div<DropDownStyledProps>`
   width: ${(props) => (props.width ? props.width : "100%")};
@@ -19,6 +20,12 @@ const DropDownWrapper = styled.div`
   align-items: center;
   position: relative;
 `;
+const InputWrapper=styled.div`
+  flex : 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`
 const Input = styled.input`
   flex: 9;
   height: 100%;
@@ -59,20 +66,19 @@ const Dropdown = ({
   placeHolder = "Select...",
   onChange,
   options,
-  isMultipleSelect=false,
-  isTypeSearch =false,
+  isMultipleSelect = false,
+  isTypeSearch = false,
   ...rest
 }: DropDownProps) => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [filter,setFilter] = useState<boolean>(false);
-  const [selectedTags,setSelectedTags] =useState<string[]>([]);
+  const [filter, setFilter] = useState<boolean>(false);
 
   const containerheight = typeof height === "number" ? height + "px" : height;
   const containerwidth = typeof width === "number" ? width + "px" : width;
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if(!isTypeSearch) return;
-    setFilter(true)
+    if (!isTypeSearch) return;
+    setFilter(true);
     const { value } = e.target;
     onChange(value);
   };
@@ -82,41 +88,80 @@ const Dropdown = ({
     const value = e.target.getAttribute("customvalue");
     // @ts-ignore
     const label = e.target.innerHTML;
-    onChange({value : value,label : label})
-    if(!isMultipleSelect){
-        setIsActive(false);
+
+    if (!isMultipleSelect) {
+      setIsActive(false);
+      onChange({ value: value, label: label });
+    } else {
+      onChange((prev: Options[]) => [...prev!, { value: value, label: label }]);
     }
   };
 
   useEffect(() => {
     if (isActive) {
       inputRef.current?.focus();
-    }else{
-     setFilter(false)
-     typeof defaultOption !== "object" && onChange("")
+    } else {
+      setFilter(false);
+      typeof defaultOption !== "object" && onChange("");
     }
-  }, [isActive, inputRef,defaultOption,onChange]);
- 
-  const valueChange = ()=>{
-    let optionsFiltered : Options[] = [...options];
-   if(isTypeSearch && filter && typeof defaultOption !== "object" ){
-    optionsFiltered =optionsFiltered.filter(option=>option.label.toLowerCase().includes(defaultOption.toLowerCase()))
-   }
+  }, [isActive, inputRef, defaultOption, onChange]);
 
-   return optionsFiltered;
-  }
-  useEffect(()=>{
-   const handleClick = ()=>setIsActive(false)
-   window.addEventListener("click",handleClick);
-   return ()=>window.removeEventListener("click",handleClick)
-  },[])
+  
+
+  const valueChange = () => {
+    let optionsFiltered: Options[] = [...options];
+    
+    if(typeof defaultOption === "object" && Array.isArray(defaultOption)){
+      if(optionsFiltered.length > defaultOption.length){
+       optionsFiltered= removeDuplicate(optionsFiltered,defaultOption,"value");
+      }else{
+       optionsFiltered= removeDuplicate(defaultOption,optionsFiltered,"value");
+      }
+    }
+    if (isTypeSearch && filter && typeof defaultOption !== "object") {
+      optionsFiltered = optionsFiltered.filter((option) =>
+        option.label.toLowerCase().includes(defaultOption.toLowerCase())
+      );
+    }
+    
+    return optionsFiltered;
+  };
+  useEffect(() => {
+    const handleClick = () => setIsActive(false);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
   return (
-    <DropDownContainer height={containerheight} width={containerwidth} onClick={e=>e.stopPropagation()}>
+    <DropDownContainer
+      height={containerheight}
+      width={containerwidth}
+      onClick={(e) => e.stopPropagation()}
+    >
       <DropDownWrapper>
-        {isMultipleSelect && <Pills pills={selectedTags}/>}
+        {isMultipleSelect && Array.isArray(defaultOption) && (
+          <Pills
+            pillheight={"auto"}
+            pillwidth={"auto"}
+            pillpadding={"4px 10px"}
+            rounded={"8px"}
+            backGroundColor={"#F7F5EB"}
+            pills={defaultOption}
+          >
+            {defaultOption.map((item: Options) => (
+              <Pill key={item.value}>
+                <span>{item.label}</span>
+              </Pill>
+            ))}
+          </Pills>
+        )}
+        <InputWrapper >
         <Input
           ref={inputRef}
-          value={typeof defaultOption !== "object" ? defaultOption : defaultOption.label}
+          value={
+            typeof defaultOption !== "object"
+              ? defaultOption
+              : defaultOption.label
+          }
           placeholder={placeHolder}
           onChange={handleChange}
           onFocus={() => setIsActive(true)}
@@ -128,21 +173,21 @@ const Dropdown = ({
             <IoIosArrowDown onClick={() => setIsActive(true)} />
           )}
         </ArrowContainer>
-       {  (isActive && valueChange().length) ? <OptionsContainer>
-          {
-            
-              valueChange().map((option) => (
-                <li
-                  key={option.value}
-                  customvalue={option.value}
-                  //  @ts-ignore
-                  onClick={handleItemClick}
-                >
-                  {option.label}
-                </li>
-              ))
-          }
-        </OptionsContainer> : null}
+        </InputWrapper>
+        {isActive && valueChange().length ? (
+          <OptionsContainer>
+            {valueChange().map((option) => (
+              <li
+                key={option.value}
+                customvalue={option.value}
+                //  @ts-ignore
+                onClick={handleItemClick}
+              >
+                {option.label}
+              </li>
+            ))}
+          </OptionsContainer>
+        ) : null}
       </DropDownWrapper>
     </DropDownContainer>
   );
