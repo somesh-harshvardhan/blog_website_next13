@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import Pills, { Pill } from "../pills/Pills";
 import { removeDuplicate } from "@/lib";
+import { IoCloseOutline } from "react-icons/io5";
 
 const DropDownContainer = styled.div<DropDownStyledProps>`
   width: ${(props) => (props.width ? props.width : "100%")};
@@ -20,12 +21,12 @@ const DropDownWrapper = styled.div`
   align-items: center;
   position: relative;
 `;
-const InputWrapper=styled.div`
-  flex : 5;
+const InputWrapper = styled.div`
+  flex: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-`
+`;
 const Input = styled.input`
   flex: 9;
   height: 100%;
@@ -70,9 +71,10 @@ const Dropdown = ({
   isTypeSearch = false,
   ...rest
 }: DropDownProps) => {
-  const [isActive, setIsActive] = useState<boolean>(false);
+  const [isActive, setIsActive] = useState<boolean>(false);//to show the options or not
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [filter, setFilter] = useState<boolean>(false);
+  const [filter, setFilter] = useState<boolean>(false);//flag to check if typing in input on isTypeSearch
+  const [mulitValues,setMultiValues] = useState<Options[]>([]);
 
   const containerheight = typeof height === "number" ? height + "px" : height;
   const containerwidth = typeof width === "number" ? width + "px" : width;
@@ -106,24 +108,22 @@ const Dropdown = ({
     }
   }, [isActive, inputRef, defaultOption, onChange]);
 
-  
-
   const valueChange = () => {
     let optionsFiltered: Options[] = [...options];
-    
-    if(typeof defaultOption === "object" && Array.isArray(defaultOption)){
-      if(optionsFiltered.length > defaultOption.length){
-       optionsFiltered= removeDuplicate(optionsFiltered,defaultOption,"value");
-      }else{
-       optionsFiltered= removeDuplicate(defaultOption,optionsFiltered,"value");
-      }
+
+    if (typeof defaultOption === "object" && Array.isArray(defaultOption)) {
+      optionsFiltered = removeDuplicate(
+        optionsFiltered,
+        defaultOption,
+        "value"
+      );
     }
     if (isTypeSearch && filter && typeof defaultOption !== "object") {
       optionsFiltered = optionsFiltered.filter((option) =>
         option.label.toLowerCase().includes(defaultOption.toLowerCase())
       );
     }
-    
+
     return optionsFiltered;
   };
   useEffect(() => {
@@ -131,6 +131,29 @@ const Dropdown = ({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+  useEffect(()=>{
+   if(!filter){
+    setMultiValues([...defaultOption])
+   }
+  },[filter,defaultOption]);
+
+
+  const handleRemoveSelectedMulti = (item: Options) => {
+    let old = [...defaultOption];
+    old = old.filter(i=>i.value !== item.value);
+    onChange([...old])
+  };
+  const pillStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+  const crossStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  };
   return (
     <DropDownContainer
       height={containerheight}
@@ -138,41 +161,48 @@ const Dropdown = ({
       onClick={(e) => e.stopPropagation()}
     >
       <DropDownWrapper>
-        {isMultipleSelect && Array.isArray(defaultOption) && (
+        {(isMultipleSelect &&  (Array.isArray(defaultOption) ?  defaultOption : mulitValues).length > 0) && (
           <Pills
             pillheight={"auto"}
             pillwidth={"auto"}
             pillpadding={"4px 10px"}
             rounded={"8px"}
             backGroundColor={"#F7F5EB"}
-            pills={defaultOption}
+            pills={Array.isArray(defaultOption) ?  defaultOption : mulitValues}
           >
-            {defaultOption.map((item: Options) => (
+            {(Array.isArray(defaultOption) ?  defaultOption : mulitValues).map((item: Options) => (
               <Pill key={item.value}>
-                <span>{item.label}</span>
+                <div style={pillStyle}>
+                  <span style={crossStyle}>
+                    <IoCloseOutline
+                      onClick={() => handleRemoveSelectedMulti(item)}
+                    />
+                  </span>{" "}
+                  <span>{item.label}</span>
+                </div>
               </Pill>
             ))}
           </Pills>
         )}
-        <InputWrapper >
-        <Input
-          ref={inputRef}
-          value={
-            typeof defaultOption !== "object"
-              ? defaultOption
-              : defaultOption.label
-          }
-          placeholder={placeHolder}
-          onChange={handleChange}
-          onFocus={() => setIsActive(true)}
-        />
-        <ArrowContainer>
-          {isActive ? (
-            <IoIosArrowUp onClick={() => setIsActive(false)} />
-          ) : (
-            <IoIosArrowDown onClick={() => setIsActive(true)} />
-          )}
-        </ArrowContainer>
+        <InputWrapper>
+          <Input
+            ref={inputRef}
+            value={
+              typeof defaultOption !== "object"
+                ? defaultOption
+                : defaultOption.label
+            }
+            placeholder={placeHolder}
+            onChange={handleChange}
+            onFocus={() => setIsActive(true)}
+          />
+          <ArrowContainer>
+            {isActive ? (
+              <IoIosArrowUp onClick={() => setIsActive(false)} />
+            ) : (
+              <IoIosArrowDown onClick={() => setIsActive(true)} />
+            )}
+          </ArrowContainer>
         </InputWrapper>
         {isActive && valueChange().length ? (
           <OptionsContainer>
