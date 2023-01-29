@@ -51,12 +51,15 @@ const OptionsContainer = styled.ul`
   border: 1px solid rgba(0, 0, 0, 0.7);
   border-radius: 8px;
   padding: 4px 0;
-  li {
-    padding: 4px 8px;
-    cursor: pointer;
-    :hover {
-      background-color: var(--primary-light-blue);
-    }
+`;
+const ListItem = styled.li.attrs((props : any)=>({value : props.customvalue}))<{ hoverColor?: string; optionHoverColor?: boolean,value : string }>`
+  padding: 4px 8px;
+  cursor: pointer;
+  :hover {
+    background-color: ${(props) =>
+      props.hoverColor && props.optionHoverColor
+        ? props.hoverColor
+        : "var(--primary-light-blue)"};
   }
 `;
 
@@ -69,12 +72,13 @@ const Dropdown = ({
   options,
   isMultipleSelect = false,
   isTypeSearch = false,
+  optionHoverColor = false,
   ...rest
 }: DropDownProps) => {
-  const [isActive, setIsActive] = useState<boolean>(false);//to show the options or not
+  const [isActive, setIsActive] = useState<boolean>(false); //to show the options or not
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [filter, setFilter] = useState<boolean>(false);//flag to check if typing in input on isTypeSearch
-  const [mulitValues,setMultiValues] = useState<Options[]>([]);
+  const [filter, setFilter] = useState<boolean>(false); //flag to check if typing in input on isTypeSearch
+  const [mulitValues, setMultiValues] = useState<Options[]>([]);
 
   const containerheight = typeof height === "number" ? height + "px" : height;
   const containerwidth = typeof width === "number" ? width + "px" : width;
@@ -84,10 +88,10 @@ const Dropdown = ({
     const { value } = e.target;
     onChange(value);
   };
-
+ console.log(defaultOption,mulitValues)
   const handleItemClick = (e: React.MouseEvent<HTMLLinkElement>) => {
     // @ts-ignore
-    const value = e.target.getAttribute("customvalue");
+    const value = e.target.getAttribute("value");
     // @ts-ignore
     const label = e.target.innerHTML;
 
@@ -95,7 +99,8 @@ const Dropdown = ({
       setIsActive(false);
       onChange({ value: value, label: label });
     } else {
-      onChange((prev: Options[]) => [...prev!, { value: value, label: label }]);
+      setFilter(false);
+      onChange([...mulitValues, { value: value, label: label }]);
     }
   };
 
@@ -111,13 +116,11 @@ const Dropdown = ({
   const valueChange = () => {
     let optionsFiltered: Options[] = [...options];
 
-    if (typeof defaultOption === "object" && Array.isArray(defaultOption)) {
       optionsFiltered = removeDuplicate(
         optionsFiltered,
-        defaultOption,
+        Array.isArray(defaultOption) && defaultOption.length > 0 ? defaultOption : mulitValues,
         "value"
       );
-    }
     if (isTypeSearch && filter && typeof defaultOption !== "object") {
       optionsFiltered = optionsFiltered.filter((option) =>
         option.label.toLowerCase().includes(defaultOption.toLowerCase())
@@ -131,17 +134,17 @@ const Dropdown = ({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
-  useEffect(()=>{
-   if(!filter){
-    setMultiValues([...defaultOption])
-   }
-  },[filter,defaultOption]);
-
+  useEffect(() => {
+    if (!filter && isMultipleSelect && Array.isArray(defaultOption) && defaultOption.length > 0) {
+      setMultiValues([...defaultOption]);
+    }
+  }, [filter, defaultOption, isMultipleSelect]);
 
   const handleRemoveSelectedMulti = (item: Options) => {
+    console.log(item);
     let old = [...defaultOption];
-    old = old.filter(i=>i.value !== item.value);
-    onChange([...old])
+    old = old.filter((i) => i.value !== item.value);
+    onChange([...old]);
   };
   const pillStyle = {
     display: "inline-flex",
@@ -161,29 +164,35 @@ const Dropdown = ({
       onClick={(e) => e.stopPropagation()}
     >
       <DropDownWrapper>
-        {(isMultipleSelect &&  (Array.isArray(defaultOption) ?  defaultOption : mulitValues).length > 0) && (
-          <Pills
-            pillheight={"auto"}
-            pillwidth={"auto"}
-            pillpadding={"4px 10px"}
-            rounded={"8px"}
-            backGroundColor={"#F7F5EB"}
-            pills={Array.isArray(defaultOption) ?  defaultOption : mulitValues}
-          >
-            {(Array.isArray(defaultOption) ?  defaultOption : mulitValues).map((item: Options) => (
-              <Pill key={item.value}>
-                <div style={pillStyle}>
-                  <span style={crossStyle}>
-                    <IoCloseOutline
-                      onClick={() => handleRemoveSelectedMulti(item)}
-                    />
-                  </span>{" "}
-                  <span>{item.label}</span>
-                </div>
-              </Pill>
-            ))}
-          </Pills>
-        )}
+        {isMultipleSelect &&
+          (Array.isArray(defaultOption) ? defaultOption : mulitValues).length >
+            0 && (
+            <Pills
+              pillheight={"auto"}
+              pillwidth={"auto"}
+              pillpadding={"4px 10px"}
+              rounded={"8px"}
+              backGroundColor={"#F7F5EB"}
+              pills={Array.isArray(defaultOption) ? defaultOption : mulitValues}
+            >
+              {(Array.isArray(defaultOption) ? defaultOption : mulitValues).map(
+                (item: Options) => {
+                  return (
+                    <Pill key={item.value}>
+                      <div style={pillStyle}>
+                        <span style={crossStyle}>
+                          <IoCloseOutline
+                            onClick={() => handleRemoveSelectedMulti(item)}
+                          />
+                        </span>{" "}
+                        <span>{item.label}</span>
+                      </div>
+                    </Pill>
+                  );
+                }
+              )}
+            </Pills>
+          )}
         <InputWrapper>
           <Input
             ref={inputRef}
@@ -207,14 +216,16 @@ const Dropdown = ({
         {isActive && valueChange().length ? (
           <OptionsContainer>
             {valueChange().map((option) => (
-              <li
+              <ListItem
                 key={option.value}
                 customvalue={option.value}
                 //  @ts-ignore
                 onClick={handleItemClick}
+                hoverColor={option.color}
+                
               >
                 {option.label}
-              </li>
+              </ListItem>
             ))}
           </OptionsContainer>
         ) : null}
