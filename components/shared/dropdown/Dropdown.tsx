@@ -52,14 +52,14 @@ const OptionsContainer = styled.ul`
   border-radius: 8px;
   padding: 4px 0;
 `;
-const ListItem = styled.li.attrs((props : any)=>({value : props.customvalue}))<{ hoverColor?: string; optionHoverColor?: boolean,value : string }>`
+const ListItem = styled.li.attrs((props: any) => ({ value: props.value })) <{ hoverColor?: string; optionHoverColor?: boolean, value: string }>`
   padding: 4px 8px;
   cursor: pointer;
   :hover {
     background-color: ${(props) =>
-      props.hoverColor && props.optionHoverColor
-        ? props.hoverColor
-        : "var(--primary-light-blue)"};
+    props.hoverColor && props.optionHoverColor
+      ? props.hoverColor
+      : "var(--primary-light-blue)"};
   }
 `;
 
@@ -88,22 +88,22 @@ const Dropdown = ({
     const { value } = e.target;
     onChange(value);
   };
- console.log(defaultOption,mulitValues)
-  const handleItemClick = (e: React.MouseEvent<HTMLLinkElement>) => {
-    // @ts-ignore
-    const value = e.target.getAttribute("value");
-    // @ts-ignore
-    const label = e.target.innerHTML;
-
+  const handleItemClick = (obj: Options) => {
     if (!isMultipleSelect) {
       setIsActive(false);
-      onChange({ value: value, label: label });
+      onChange({ ...obj });
     } else {
       setFilter(false);
-      onChange([...mulitValues, { value: value, label: label }]);
+      onChange([...mulitValues, { ...obj }]);
     }
   };
-
+  useEffect(() => {
+    if (!filter) {
+      if (!Array.isArray(defaultOption)) {
+        onChange([...mulitValues])
+      }
+    }
+  }, [filter, mulitValues, defaultOption, onChange])
   useEffect(() => {
     if (isActive) {
       inputRef.current?.focus();
@@ -116,11 +116,11 @@ const Dropdown = ({
   const valueChange = () => {
     let optionsFiltered: Options[] = [...options];
 
-      optionsFiltered = removeDuplicate(
-        optionsFiltered,
-        Array.isArray(defaultOption) && defaultOption.length > 0 ? defaultOption : mulitValues,
-        "value"
-      );
+    optionsFiltered = removeDuplicate(
+      optionsFiltered,
+      Array.isArray(defaultOption) && defaultOption.length > 0 ? defaultOption : mulitValues,
+      "value"
+    );
     if (isTypeSearch && filter && typeof defaultOption !== "object") {
       optionsFiltered = optionsFiltered.filter((option) =>
         option.label.toLowerCase().includes(defaultOption.toLowerCase())
@@ -135,13 +135,12 @@ const Dropdown = ({
     return () => window.removeEventListener("click", handleClick);
   }, []);
   useEffect(() => {
-    if (!filter && isMultipleSelect && Array.isArray(defaultOption) && defaultOption.length > 0) {
+    if (!filter && isMultipleSelect && Array.isArray(defaultOption)) {
       setMultiValues([...defaultOption]);
     }
   }, [filter, defaultOption, isMultipleSelect]);
 
   const handleRemoveSelectedMulti = (item: Options) => {
-    console.log(item);
     let old = [...defaultOption];
     old = old.filter((i) => i.value !== item.value);
     onChange([...old]);
@@ -166,19 +165,18 @@ const Dropdown = ({
       <DropDownWrapper>
         {isMultipleSelect &&
           (Array.isArray(defaultOption) ? defaultOption : mulitValues).length >
-            0 && (
+          0 && (
             <Pills
-              pillheight={"auto"}
-              pillwidth={"auto"}
-              pillpadding={"4px 10px"}
-              rounded={"8px"}
-              backGroundColor={"#F7F5EB"}
-              pills={Array.isArray(defaultOption) ? defaultOption : mulitValues}
             >
               {(Array.isArray(defaultOption) ? defaultOption : mulitValues).map(
                 (item: Options) => {
                   return (
-                    <Pill key={item.value}>
+                    <Pill key={item.value} 
+                      backGroundColor={item.color} 
+                      pillheight={"auto"}
+                      pillwidth={"auto"}
+                      pillpadding={"4px 8px"}
+                      rounded={"8px"}>
                       <div style={pillStyle}>
                         <span style={crossStyle}>
                           <IoCloseOutline
@@ -213,22 +211,22 @@ const Dropdown = ({
             )}
           </ArrowContainer>
         </InputWrapper>
-        {isActive && valueChange().length ? (
+        {isActive && (
           <OptionsContainer>
-            {valueChange().map((option) => (
+            {valueChange().length ? valueChange().map((option) => (
               <ListItem
                 key={option.value}
-                customvalue={option.value}
+                value={option.value}
                 //  @ts-ignore
-                onClick={handleItemClick}
+                onClick={() => handleItemClick(option)}
                 hoverColor={option.color}
-                
+                optionHoverColor={optionHoverColor}
               >
                 {option.label}
               </ListItem>
-            ))}
+            )) : <p style={{ textAlign: 'center' }}>No Options</p>}
           </OptionsContainer>
-        ) : null}
+        )}
       </DropDownWrapper>
     </DropDownContainer>
   );
